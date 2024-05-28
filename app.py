@@ -7,7 +7,7 @@ import numpy as np
 model = YOLO('./100-fix.pt')
 
 # Streamlit UI
-st.title("YOLO Model Prediction")
+st.title("Test Document Validator")
 st.write("Upload an image and set the parameters for prediction")
 
 # Upload an image
