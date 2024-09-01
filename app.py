@@ -28,7 +28,7 @@ def calculate_iou(box1, box2):
 
     return iou
 
-def detect_and_save(image_path, page_number, pdf_filename, save_dir):
+def detect_and_save(image_path, page_number, pdf_filename, save_dir, save_image):
     font = ImageFont.truetype("/usr/share/fonts/truetype/fonts-yrsa-rasa/Rasa-Regular.ttf", 30)
     
     image = Image.open(image_path)
@@ -68,72 +68,73 @@ def detect_and_save(image_path, page_number, pdf_filename, save_dir):
 
     save_type = "Accepted" if output_results['Validation Status'] == "Accepted" else "Refused"
     
-    draw = ImageDraw.Draw(image)
+    if save_image:
+        draw = ImageDraw.Draw(image)
     
-    for _, row in df.iterrows():
-        xmin, ymin, xmax, ymax = row['xmin'], row['ymin'], row['xmax'], row['ymax']
-        label = row['name']
+        for _, row in df.iterrows():
+            xmin, ymin, xmax, ymax = row['xmin'], row['ymin'], row['xmax'], row['ymax']
+            label = row['name']
 
-        if label == "sign":
-            color = "blue"
-        elif label == "duty_stamp":
-            color = "orange"
-        elif label == "e_duty_stamp":
-            color = "red"
-        else:
-            color = "white"
+            if label == "sign":
+                color = "blue"
+            elif label == "duty_stamp":
+                color = "orange"
+            elif label == "e_duty_stamp":
+                color = "red"
+            else:
+                color = "white"
 
-        draw.rectangle([xmin, ymin, xmax, ymax], outline=color, width=3)
+            draw.rectangle([xmin, ymin, xmax, ymax], outline=color, width=3)
 
-        text = label
-        text_bbox = draw.textbbox((xmin, ymin - 20), text, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
+            text = label
+            text_bbox = draw.textbbox((xmin, ymin - 20), text, font=font)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
 
-        text_background = [xmin, ymin - text_height - 10, xmin + text_width, ymin]
-        draw.rectangle(text_background, fill=color)
+            text_background = [xmin, ymin - text_height - 10, xmin + text_width, ymin]
+            draw.rectangle(text_background, fill=color)
 
-        draw.text((xmin + 2, ymin - text_height - 8), text, font=font, fill="white")
-    
-    # AI rendering text position
-    text_x = 100
-    text_y = 10
-    padding = 20
+            draw.text((xmin + 2, ymin - text_height - 8), text, font=font, fill="white")
+        
+        # AI rendering text position
+        text_x = 100
+        text_y = 10
+        padding = 20
 
-    for label, status in output_results.items():
-        text = f"{label}: {status}"
+        for label, status in output_results.items():
+            text = f"{label}: {status}"
 
-        if label == "IoU_sign_dstamp" or label == "IoU_sign_e_dstamp":
-            text_color = 'white' if status == "OK" else 'black'
-            bg_color = 'blue' if status == "OK" else 'lightcoral'
+            if label == "IoU_sign_dstamp" or label == "IoU_sign_e_dstamp":
+                text_color = 'white' if status == "OK" else 'black'
+                bg_color = 'blue' if status == "OK" else 'lightcoral'
 
-        elif label == "Validation Status":
-            text_color = 'black' if status == "Accepted" else 'black'
-            bg_color = 'green' if status == "Accepted" else 'lightcoral'
-            
-        else:
-            text_color = 'black' if status == "OK" else 'black'
-            bg_color = 'lightgreen' if status == "OK" else 'lightcoral'
+            elif label == "Validation Status":
+                text_color = 'black' if status == "Accepted" else 'black'
+                bg_color = 'green' if status == "Accepted" else 'lightcoral'
+                
+            else:
+                text_color = 'black' if status == "OK" else 'black'
+                bg_color = 'lightgreen' if status == "OK" else 'lightcoral'
 
-        bbox = draw.textbbox((text_x, text_y), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
-        bg_width = text_width + 2 * padding
-        bg_height = text_height + 2 * padding
+            bbox = draw.textbbox((text_x, text_y), text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            bg_width = text_width + 2 * padding
+            bg_height = text_height + 2 * padding
 
-        draw.rectangle([text_x, text_y, text_x + bg_width, text_y + bg_height], fill=bg_color)
+            draw.rectangle([text_x, text_y, text_x + bg_width, text_y + bg_height], fill=bg_color)
 
-        draw.text((text_x + padding, text_y + padding), text, font=font, fill=text_color)
-        text_y += bg_height  # Move to next line
+            draw.text((text_x + padding, text_y + padding), text, font=font, fill=text_color)
+            text_y += bg_height  # Move to next line
 
-    image_filename = f"{os.path.splitext(pdf_filename)[0]}_page_{page_number}.png"
-    saved_image_path = os.path.join(save_dir, image_filename)
-    image.save(saved_image_path)
+        image_filename = f"{os.path.splitext(pdf_filename)[0]}_page_{page_number}.png"
+        saved_image_path = os.path.join(save_dir, image_filename)
+        image.save(saved_image_path)
 
     return output_results['Validation Status']
 
-def process_pdfs_in_folder(folder_path, save_dir, csv_file):
-    if not os.path.exists(save_dir):
+def process_pdfs_in_folder(folder_path, save_dir, csv_file, save_image):
+    if not os.path.exists(save_dir) and save_image:
         os.makedirs(save_dir)
 
     all_results = []
@@ -146,7 +147,7 @@ def process_pdfs_in_folder(folder_path, save_dir, csv_file):
             pdf_status = "Refused"
             for i, image in enumerate(images):
                 image.save("temp_page.png")
-                page_status = detect_and_save("temp_page.png", i + 1, pdf_file, save_dir)
+                page_status = detect_and_save("temp_page.png", i + 1, pdf_file, save_dir, save_image)
                 
                 if page_status == "Accepted":
                     pdf_status = "Accepted"
@@ -165,11 +166,14 @@ def process_pdfs_in_folder(folder_path, save_dir, csv_file):
     print(f"All results saved to {csv_file}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process PDF documents and save results.")
+    parser = argparse.ArgumentParser(description="Process PDF documents and optionally save images.")
     parser.add_argument('path_pdf_documents', type=str, help='Path to the folder containing PDF documents')
+    parser.add_argument('--save_image', type=bool, default=False, help='Whether to save images to ai_rendering folder')
+
     args = parser.parse_args()
 
     folder_path = args.path_pdf_documents
-    save_dir = './ai_rendering'    
-    csv_file = './report/final_results.csv'
-    process_pdfs_in_folder(folder_path, save_dir, csv_file)
+    save_dir = './ai_rendering'   
+    csv_file = './report/final_results.csv' 
+
+    process_pdfs_in_folder(folder_path, save_dir, csv_file, args.save_image)
