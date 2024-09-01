@@ -5,3 +5,6 @@
 /runs
 /yolov5s_results
 /yolov5
+/temp_old
+
+/train_yolov5_object_detection_on_custom_data.ipynb
