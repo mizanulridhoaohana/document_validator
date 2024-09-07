@@ -6,7 +6,7 @@ import os
 import csv
 
 # Load the model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='models/best_4_label.pt')
 
 def calculate_iou(box1, box2):
     x1_min, y1_min, x1_max, y1_max = box1
@@ -38,6 +38,7 @@ def detect_and_save(image_path, page_number, pdf_filename, save_dir, save_image)
     output_results = {
         'sign': "NG",
         'duty_stamp': "NG",
+        'ds_number': "NG",
         'e_duty_stamp': "NG",
         'IoU_sign_dstamp': "NG",
         'IoU_sign_e_dstamp': "NG",
@@ -81,6 +82,8 @@ def detect_and_save(image_path, page_number, pdf_filename, save_dir, save_image)
                 color = "orange"
             elif label == "e_duty_stamp":
                 color = "red"
+            elif label == "ds_number":
+                color = "green"
             else:
                 color = "white"
 
