@@ -38,3 +38,4 @@ If you do not want to save the images, simply run:
 ## Notes
 - Ensure that the path to the YOLOv5 model (`models/best.pt`) and the PDF folder are correct before running the script.
 - Detection results are saved as PNG files in the `ai_rendering` folder if the `--save_image=True` option is used.
+- 
